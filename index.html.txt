@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+  <meta charset="UTF-8">
+  <title>朗读录音上传</title>
+  <style>
+    body {
+      font-family: sans-serif;
+      background-color: #f5f7f4;
+      color: #333;
+      max-width: 600px;
+      margin: 2rem auto;
+      padding: 1.5rem;
+      line-height: 1.6;
+      border-radius: 12px;
+      box-shadow: 0 0 10px rgba(0,0,0,0.1);
+    }
+    textarea, input, button {
+      margin-top: 1rem;
+      width: 100%;
+    }
+    button {
+      padding: 0.5rem;
+      border: none;
+      background-color: #669e8c;
+      color: white;
+      font-size: 1rem;
+      border-radius: 6px;
+      cursor: pointer;
+    }
+    button:hover {
+      background-color: #4e7e6f;
+    }
+  </style>
+</head>
+<body>
+  <h2>朗读任务</h2>
+  <p>
+三月的阳光总是温柔的，像是某种不愿惊扰谁的悄悄话。她喜欢这样的季节，一切都刚刚好——不冷不热，不忙不闲。她的阳台上种着几株绿植，有龟背竹、有常春藤，还有一株她最喜爱的虎尾兰。每个清晨，她会端一杯热茶，站在阳台边，仔细观察每一片叶子的变化。
+  </p>
+  <p>
+她说，植物和人一样，需要的不是太多的水，而是恰到好处的照顾。她曾试图教会身边的朋友怎么养好一株植物，尤其是那盆多肉，每次晒得过头，它的叶子就像她偶尔的倦怠，开始向内卷曲。她会把它挪到阴影里，小声地说，“别怕，我在。”
+  </p>
+  <p>
+有时她也会想起小时候在乡下外婆家的院子。那时没有城市的嘈杂，只有风吹竹叶的沙沙声，和院子角落里一棵不知道名字的树。她曾在树下搭过帐篷，用小塑料杯给蚂蚁浇水，也会盯着天上的云发呆，幻想云朵也在低声说话。
+  </p>
+  <p>
+她相信，每个静默不语的生命，其实都有自己的语言。只要我们愿意倾听，它们就会在沉默中开出属于自己的花。
+  </p>
+
+  <h3>录音控制</h3>
+  <button id="startBtn">🎙️ 开始录音</button>
+  <button id="stopBtn" disabled>⏹️ 停止录音</button>
+  <button id="reRecordBtn" disabled>🔁 重新录音</button>
+  <audio id="audioPlayer" controls style="display:none; margin-top:1rem;"></audio>
+
+  <form id="uploadForm" action="https://formspree.io/f/xpwdllwv" method="POST" enctype="multipart/form-data">
+    <label>昵称（可选）：</label>
+    <input type="text" name="nickname" placeholder="例如：小L" />
+
+    <input type="file" id="audioFile" name="recording" style="display: none;" required />
+    <button type="submit" disabled id="submitBtn">📤 上传录音</button>
+  </form>
+
+  <script>
+    let mediaRecorder, audioChunks = [];
+    const startBtn = document.getElementById('startBtn');
+    const stopBtn = document.getElementById('stopBtn');
+    const reRecordBtn = document.getElementById('reRecordBtn');
+    const audioPlayer = document.getElementById('audioPlayer');
+    const audioFileInput = document.getElementById('audioFile');
+    const submitBtn = document.getElementById('submitBtn');
+
+    startBtn.onclick = async () => {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      mediaRecorder = new MediaRecorder(stream);
+      audioChunks = [];
+      mediaRecorder.ondataavailable = e => audioChunks.push(e.data);
+      mediaRecorder.onstop = () => {
+        const blob = new Blob(audioChunks, { type: 'audio/webm' });
+        const url = URL.createObjectURL(blob);
+        audioPlayer.src = url;
+        audioPlayer.style.display = 'block';
+
+        // 将 blob 转为 File，赋值给隐藏 file input
+        const file = new File([blob], 'recording.webm', { type: 'audio/webm' });
+        const dt = new DataTransfer();
+        dt.items.add(file);
+        audioFileInput.files = dt.files;
+
+        submitBtn.disabled = false;
+      };
+      mediaRecorder.start();
+      startBtn.disabled = true;
+      stopBtn.disabled = false;
+      reRecordBtn.disabled = true;
+    };
+
+    stopBtn.onclick = () => {
+      mediaRecorder.stop();
+      stopBtn.disabled = true;
+      reRecordBtn.disabled = false;
+    };
+
+    reRecordBtn.onclick = () => {
+      audioPlayer.src = '';
+      audioPlayer.style.display = 'none';
+      submitBtn.disabled = true;
+      startBtn.disabled = false;
+      reRecordBtn.disabled = true;
+    };
+  </script>
+</body>
+</html>
